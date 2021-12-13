@@ -1,0 +1,42 @@
+﻿<Window x:Class="RemoteGallery.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:prism="http://prismlibrary.com/"
+        prism:ViewModelLocator.AutoWireViewModel="True"
+        mc:Ignorable="d"
+        Title="PS4 Remote Gallery" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
+        </Grid.RowDefinitions>
+        <Grid x:Name="AppHeader" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Top">
+            <DockPanel>
+                <Label Content="Console IP" Height="28" />
+
+                <TextBox Width="100" Margin="3" HorizontalAlignment="Left" Text="{Binding ConsoleIp}" />
+
+                <Label Content="Port" Height="28" />
+
+                <TextBox Width="50" Margin="3" HorizontalAlignment="Left" Text="{Binding ConsolePort}" />
+
+                <Button Command="{Binding ConnectToConsoleCommand}" Content="Connect"></Button>
+            </DockPanel>
+        </Grid>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"></ColumnDefinition>
+                <ColumnDefinition Width="*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <ListBox ItemsSource="{Binding GalleryTitlesView}" DisplayMemberPath="DisplayName"  SelectedItem="{Binding SelectedTitle}"></ListBox>
+            </Grid>
+            <Grid Grid.Column="1">
+                <ContentControl prism:RegionManager.RegionName="ContentRegion"></ContentControl>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>
