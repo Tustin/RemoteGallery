@@ -20,8 +20,8 @@ namespace RemoteGallery.ViewModels
 {
     internal class TitleGalleryViewModel : BindableBase
     {
-        private IFtpHandler _ftpHandler;
-        private IEventAggregator _eventAggregator;
+        private readonly IFtpHandler _ftpHandler;
+        private readonly IEventAggregator _eventAggregator;
 
         public ObservableCollection<BitmapImage> TitleImages { get; private set; }
 

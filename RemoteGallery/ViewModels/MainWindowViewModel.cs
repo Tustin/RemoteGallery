@@ -6,6 +6,7 @@ using RemoteGallery.Configuration;
 using RemoteGallery.Events;
 using RemoteGallery.Models;
 using RemoteGallery.Services;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -22,10 +23,10 @@ namespace RemoteGallery.ViewModels;
 
 class MainWindowViewModel : BindableBase
 {
-    private IEventAggregator _eventAggregator;
-    private ITmdbResolverService _tmdbResolverService;
-    private IFtpHandler _ftpHandler;
-    private CancellationTokenSource _ftpConnectCancellationToken;
+    private readonly IEventAggregator _eventAggregator;
+    private readonly ITmdbResolverService _tmdbResolverService;
+    private readonly IFtpHandler _ftpHandler;
+    private readonly CancellationTokenSource _ftpConnectCancellationToken;
 
     public ICommand ConnectToConsoleCommand { get; }
 
@@ -52,6 +53,13 @@ class MainWindowViewModel : BindableBase
         set => SetProperty(ref _consolePort, value, OnConsolePortChanged);
     }
 
+    private bool _isConnecting = false;
+    public bool IsConnecting
+    {
+        get => _isConnecting;
+        set => SetProperty(ref _isConnecting, value);
+    }
+
     private void OnConsolePortChanged()
     {
         // 
@@ -76,7 +84,7 @@ class MainWindowViewModel : BindableBase
         _tmdbResolverService = tmdbResolverService;
         _ftpHandler = ftpHandler;
 
-        ConnectToConsoleCommand = new DelegateCommand(ConnectToConsoleAsync, CanConnectToConsole);
+        ConnectToConsoleCommand = new DelegateCommand(ConnectToConsoleAsync, CanConnectToConsole).ObservesProperty(() => IsConnecting);
 
 #if DEBUG
         ConsoleIp = "192.168.0.116";
@@ -94,21 +102,34 @@ class MainWindowViewModel : BindableBase
 
     private bool CanConnectToConsole()
     {
-        return ! _ftpHandler.FtpClient.IsAuthenticated;
+        return !IsConnecting && ! _ftpHandler.IsActive();
     }
 
     public async void ConnectToConsoleAsync()
     {
+        IsConnecting = true;
+
         _ftpHandler.FtpClient.Host = ConsoleIp;
         _ftpHandler.FtpClient.Port = int.Parse(ConsolePort);
         _ftpHandler.FtpClient.Credentials = new NetworkCredential("anonymous", "anonymous");
 
-        await _ftpHandler.FtpClient.ConnectAsync(_ftpConnectCancellationToken.Token);
+        try
+        {
+            await _ftpHandler.FtpClient.ConnectAsync(_ftpConnectCancellationToken.Token);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Failed connecting to console");
+            return;
+        }
+        finally
+        {
+            IsConnecting = false;
+        }
 
         foreach (FtpListItem item in await _ftpHandler.FtpClient.GetListingAsync(AppConfiguration.FullThumbnailPhotoPath))
         {
             GalleryTitles.Add(new InternalTitle(item.Name, _tmdbResolverService));
         }
-
     }
 }
