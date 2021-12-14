@@ -1,6 +1,7 @@
 # RemoteGallery
 Remotely view your PS4 capture gallery.
 
+![image](https://user-images.githubusercontent.com/5008148/146041936-62a13e65-4a98-4b3e-b460-3aa4a6cfe542.png)
 
 ## Requirements
 
