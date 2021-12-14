@@ -48,6 +48,15 @@ namespace RemoteGallery.Models
 
         [JsonProperty("neoEnable")]
         public long NeoEnable { get; set; }
+
+        public Title(string titleId, string name)
+        {
+            NpTitleId = titleId;
+            Names = new Name[]
+            {
+                new Name(name)
+            };
+        }
     }
 
     public partial class Icon
@@ -63,5 +72,10 @@ namespace RemoteGallery.Models
     {
         [JsonProperty("name")]
         public string NameName { get; set; }
+
+        public Name(string name)
+        {
+            NameName = name;
+        }
     }
 }

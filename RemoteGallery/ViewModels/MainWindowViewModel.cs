@@ -16,6 +16,7 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
 
@@ -120,6 +121,7 @@ class MainWindowViewModel : BindableBase
         catch (Exception ex)
         {
             Log.Error(ex, "Failed connecting to console");
+            MessageBox.Show("Failed connecting to console. Make sure your console IP and port is correct.", "Remote Gallery");
             return;
         }
         finally

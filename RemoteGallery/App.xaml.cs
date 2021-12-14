@@ -11,6 +11,7 @@ namespace RemoteGallery;
 
 public partial class App : PrismApplication
 {
+    private ITmdbResolverService _tmdbResolverService; 
     protected override Window CreateShell()
     {
         return Container.Resolve<MainWindow>();
@@ -29,6 +30,21 @@ public partial class App : PrismApplication
                 rollingInterval: RollingInterval.Month)
             .CreateLogger();
     }
+
+    protected override void Initialize()
+    {
+        base.Initialize();
+
+        _tmdbResolverService = Container.Resolve<ITmdbResolverService>();
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _tmdbResolverService.Store();
+
+        base.OnExit(e);
+    }
+
 
     protected override void RegisterTypes(IContainerRegistry containerRegistry)
     {

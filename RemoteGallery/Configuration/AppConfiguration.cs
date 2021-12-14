@@ -15,6 +15,8 @@ namespace RemoteGallery.Configuration
             );
         public static string LogsDirectory => Path.Combine(AppDataDirectory, "logs");
         public static string TmpDirectory => Path.Combine(AppDataDirectory, "tmp");
+        public static string ResolvedTitleIdStorage => Path.Combine(TmpDirectory, "titles.json");
+
         public static string LocalThumbnailsDirectory => Path.Combine(TmpDirectory, "thumbnails");
 
         private static string GalleryPath => "/user/av_contents/";

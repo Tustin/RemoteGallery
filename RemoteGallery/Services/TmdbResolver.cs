@@ -1,7 +1,10 @@
 ﻿using Newtonsoft.Json;
+using RemoteGallery.Configuration;
 using RemoteGallery.Models;
 using Serilog;
 using System;
+using System.Collections;
+using System.IO;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,7 +15,7 @@ namespace RemoteGallery.Services
     public interface ITmdbResolverService
     {
         public Task<Title?> GetTitle(string titleId);
-
+        public void Store();
     }
     public class TmdbResolverService : ITmdbResolverService
     {
@@ -20,10 +23,36 @@ namespace RemoteGallery.Services
 
         private HttpClient HttpClient;
 
+        private Hashtable _titleIdCache = new();
+
+
         public TmdbResolverService()
         {
             HttpClient = new HttpClient();
             HttpClient.Timeout = TimeSpan.FromSeconds(20);
+
+            if (!File.Exists(AppConfiguration.ResolvedTitleIdStorage))
+            {
+                try
+                {
+                    File.Create(AppConfiguration.ResolvedTitleIdStorage);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed creating title id storage file");
+                }
+            }
+            else
+            {
+                try
+                {
+                    _titleIdCache = JsonConvert.DeserializeObject<Hashtable>(File.ReadAllText(AppConfiguration.ResolvedTitleIdStorage)) ?? new Hashtable();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Failed deserializing title id storage file");
+                }
+            }
         }
 
         private string CreateTitleIdUrl(string titleId)
@@ -40,11 +69,25 @@ namespace RemoteGallery.Services
 
         public async Task<Title?> GetTitle(string titleId)
         {
+            if (titleId.Equals("NPXS20001"))
+            {
+                // Dont need to try to resolve this; it's an internal PS4 title and won't ever have results.
+                return default;
+            }
+
             // Slow but needs to be done
             if (!titleId.EndsWith("_00"))
             {
                 titleId += "_00";
             }
+
+            if (_titleIdCache.ContainsKey(titleId))
+            {
+                Log.Debug($"Found {titleId} in cache");
+
+                return new Title(titleId, _titleIdCache[titleId].ToString());
+            }
+
 
             var url = CreateTitleIdUrl(titleId);
 
@@ -52,12 +95,41 @@ namespace RemoteGallery.Services
             {
                 var response = await HttpClient.GetAsync(url);
 
-                return JsonConvert.DeserializeObject<Title>(await response.Content.ReadAsStringAsync());
+                var title = JsonConvert.DeserializeObject<Title>(await response.Content.ReadAsStringAsync());
+
+                if (title != null)
+                {
+                    if (!_titleIdCache.Contains(title.NpTitleId))
+                    {
+                        lock (_titleIdCache.SyncRoot)
+                        {
+                            _titleIdCache.Add(title.NpTitleId, title.Names[0].NameName);
+                        }
+                       
+                        Log.Debug($"Added {title.NpTitleId} to cache");
+                    }
+                }
+
+                return title;
             }
             catch (Exception ex)
             {
                 Log.Debug(ex, $"Failed getting title id content for {titleId} ({url})");
                 return default;
+            }
+        }
+
+        public void Store()
+        {
+            try
+            {
+                File.WriteAllText(AppConfiguration.ResolvedTitleIdStorage, JsonConvert.SerializeObject(_titleIdCache));
+
+                Log.Debug("Stored title id cache");
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Failed storing title id cache");
             }
         }
     }
