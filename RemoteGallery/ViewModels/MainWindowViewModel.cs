@@ -53,17 +53,17 @@ class MainWindowViewModel : BindableBase
         get => _consolePort;
         set => SetProperty(ref _consolePort, value, OnConsolePortChanged);
     }
+    
+    private void OnConsolePortChanged()
+    {
+        // 
+    }
 
     private bool _isConnecting = false;
     public bool IsConnecting
     {
         get => _isConnecting;
         set => SetProperty(ref _isConnecting, value);
-    }
-
-    private void OnConsolePortChanged()
-    {
-        // 
     }
 
     private InternalTitle? _selectedTitle;
@@ -77,6 +77,19 @@ class MainWindowViewModel : BindableBase
     private void OnSelectedTitleChanged()
     {
         _eventAggregator.GetEvent<GameChangedEvent>().Publish(SelectedTitle);
+    }
+
+    private string _searchQuery = string.Empty;
+
+    public string SearchQuery
+    {
+        get => _searchQuery;
+        set => SetProperty(ref _searchQuery, value, OnSearchQueryChanged);
+    }
+
+    private void OnSearchQueryChanged()
+    {
+        GalleryTitlesView.Refresh();
     }
 
     public MainWindowViewModel(IEventAggregator eventAggregator, ITmdbResolverService tmdbResolverService, IFtpHandler ftpHandler)
@@ -93,12 +106,33 @@ class MainWindowViewModel : BindableBase
 #endif
         GalleryTitles = new ObservableCollection<InternalTitle>();
 
-        GalleryTitlesView = new CollectionViewSource
+
+        var cvs = new CollectionViewSource
         {
-            Source = GalleryTitles
-        }.View;
+            Source = GalleryTitles,
+        };
+
+        GalleryTitlesView = cvs.View;
+        GalleryTitlesView.Filter = OnFilterTitle;
 
         _ftpConnectCancellationToken = new CancellationTokenSource();
+    }
+
+    private bool OnFilterTitle(object obj)
+    {
+        if (string.IsNullOrEmpty(SearchQuery))
+        {
+            return true;
+        }
+
+        var title = obj as InternalTitle;
+
+        if (title == null)
+        {
+            return false;
+        }
+
+        return title.DisplayName.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase) || title.TitleId.Contains(SearchQuery, StringComparison.CurrentCultureIgnoreCase);
     }
 
     private bool CanConnectToConsole()

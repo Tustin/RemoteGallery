@@ -32,7 +32,12 @@
                 <ColumnDefinition Width="*"></ColumnDefinition>
             </Grid.ColumnDefinitions>
             <Grid Grid.Column="0">
-                <ListBox ItemsSource="{Binding GalleryTitlesView}" DisplayMemberPath="DisplayName"  SelectedItem="{Binding SelectedTitle}"></ListBox>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="25"></RowDefinition>
+                    <RowDefinition Height="*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <TextBox Grid.Row="0" Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged, Delay=300}"></TextBox>
+                <ListBox Grid.Row="1" ItemsSource="{Binding GalleryTitlesView}" DisplayMemberPath="DisplayName" SelectedItem="{Binding SelectedTitle}"></ListBox>
             </Grid>
             <Grid Grid.Column="1">
                 <ContentControl prism:RegionManager.RegionName="ContentRegion"></ContentControl>
